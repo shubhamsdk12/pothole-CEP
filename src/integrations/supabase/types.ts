@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          issue_type: string | null
           latitude: number
           longitude: number
           ml_analysis: Json | null
@@ -28,6 +29,7 @@ export type Database = {
           severity: string | null
           status: string | null
           updated_at: string
+          urgency: string | null
           user_id: string
         }
         Insert: {
@@ -35,6 +37,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          issue_type?: string | null
           latitude: number
           longitude: number
           ml_analysis?: Json | null
@@ -43,6 +46,7 @@ export type Database = {
           severity?: string | null
           status?: string | null
           updated_at?: string
+          urgency?: string | null
           user_id: string
         }
         Update: {
@@ -50,6 +54,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          issue_type?: string | null
           latitude?: number
           longitude?: number
           ml_analysis?: Json | null
@@ -58,6 +63,7 @@ export type Database = {
           severity?: string | null
           status?: string | null
           updated_at?: string
+          urgency?: string | null
           user_id?: string
         }
         Relationships: []
@@ -65,29 +71,62 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          credits: number | null
           email: string | null
           full_name: string | null
           id: string
           phone: string | null
+          resolved_reports: number | null
+          total_reports: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          credits?: number | null
           email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
+          resolved_reports?: number | null
+          total_reports?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          credits?: number | null
           email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
+          resolved_reports?: number | null
+          total_reports?: number | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_medals: {
+        Row: {
+          awarded_at: string | null
+          credits_at_award: number
+          id: string
+          medal_type: string
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string | null
+          credits_at_award: number
+          id?: string
+          medal_type: string
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string | null
+          credits_at_award?: number
+          id?: string
+          medal_type?: string
           user_id?: string
         }
         Relationships: []
