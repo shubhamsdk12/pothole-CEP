@@ -51,7 +51,7 @@ export const AdminReportsTable = () => {
       .from('pothole_reports')
       .select(`
         *,
-        profiles!pothole_reports_user_id_fkey (
+        profiles:user_id (
           full_name,
           email
         )
@@ -62,7 +62,7 @@ export const AdminReportsTable = () => {
       toast.error('Failed to fetch reports');
       console.error(error);
     } else {
-      setReports(data || []);
+      setReports(data as any || []);
     }
     setLoading(false);
   };

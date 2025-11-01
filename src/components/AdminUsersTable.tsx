@@ -33,7 +33,7 @@ export const AdminUsersTable = () => {
       .from('profiles')
       .select(`
         *,
-        user_medals (
+        user_medals:user_id (
           medal_type
         )
       `)
@@ -43,7 +43,7 @@ export const AdminUsersTable = () => {
       toast.error('Failed to fetch users');
       console.error(error);
     } else {
-      setUsers(data || []);
+      setUsers(data as any || []);
     }
     setLoading(false);
   };
