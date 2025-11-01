@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,9 +15,14 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
+import { useState } from 'react';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
+  const navigate = useNavigate();
+  const { isAdmin } = useAdminCheck();
+  const [activeTab, setActiveTab] = useState('pothole');
 
   if (loading) {
     return (
@@ -50,19 +55,19 @@ const Index = () => {
               <NavigationMenu className="hidden md:block">
                 <NavigationMenuList>
                   <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#" onClick={() => setActiveTab('pothole')}>
                       <Camera className="h-4 w-4 mr-2" />
                       Report Pothole
                     </NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#" onClick={() => setActiveTab('other')}>
                       <AlertTriangle className="h-4 w-4 mr-2" />
                       Other Issues
                     </NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#" onClick={() => setActiveTab('credits')}>
                       <Trophy className="h-4 w-4 mr-2" />
                       Credits
                     </NavigationMenuLink>
@@ -70,6 +75,12 @@ const Index = () => {
                 </NavigationMenuList>
               </NavigationMenu>
               
+              {isAdmin && (
+                <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Admin
+                </Button>
+              )}
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
@@ -94,7 +105,7 @@ const Index = () => {
           </Card>
 
           {/* Main Tabs */}
-          <Tabs defaultValue="pothole" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="pothole" className="flex items-center gap-2">
                 <Camera className="h-4 w-4" />
