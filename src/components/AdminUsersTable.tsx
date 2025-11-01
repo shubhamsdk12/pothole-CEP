@@ -29,22 +29,34 @@ export const AdminUsersTable = () => {
   }, []);
 
   const fetchUsers = async () => {
-    const { data, error } = await supabase
+    const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
-      .select(`
-        *,
-        user_medals:user_id (
-          medal_type
-        )
-      `)
+      .select('*')
       .order('credits', { ascending: false });
 
-    if (error) {
+    if (profilesError) {
       toast.error('Failed to fetch users');
-      console.error(error);
-    } else {
-      setUsers(data as any || []);
+      console.error(profilesError);
+      setLoading(false);
+      return;
     }
+
+    // Fetch medals for all users
+    const { data: medalsData, error: medalsError } = await supabase
+      .from('user_medals')
+      .select('user_id, medal_type');
+
+    if (medalsError) {
+      console.error('Error fetching medals:', medalsError);
+    }
+
+    // Combine the data
+    const usersWithMedals = profilesData?.map(profile => ({
+      ...profile,
+      user_medals: medalsData?.filter(medal => medal.user_id === profile.user_id) || []
+    })) || [];
+
+    setUsers(usersWithMedals as any);
     setLoading(false);
   };
 
