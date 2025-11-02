@@ -47,23 +47,36 @@ export const AdminReportsTable = () => {
   }, []);
 
   const fetchReports = async () => {
-    const { data, error } = await supabase
+    const { data: reportsData, error: reportsError } = await supabase
       .from('pothole_reports')
-      .select(`
-        *,
-        profiles:user_id (
-          full_name,
-          email
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
+    if (reportsError) {
       toast.error('Failed to fetch reports');
-      console.error(error);
-    } else {
-      setReports(data as any || []);
+      console.error(reportsError);
+      setLoading(false);
+      return;
     }
+
+    // Fetch profiles for all users
+    const userIds = [...new Set(reportsData?.map(r => r.user_id))];
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('user_id, full_name, email')
+      .in('user_id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+    }
+
+    // Combine the data
+    const reportsWithProfiles = reportsData?.map(report => ({
+      ...report,
+      profiles: profilesData?.find(profile => profile.user_id === report.user_id) || null
+    })) || [];
+
+    setReports(reportsWithProfiles as any);
     setLoading(false);
   };
 
