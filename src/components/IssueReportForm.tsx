@@ -9,8 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from '@/hooks/useLocation';
 import { supabase } from '@/integrations/supabase/client';
-import { verifyPotholeImage, MLVerificationResult } from '@/lib/mlVerification';
-import { Camera, MapPin, Upload, CheckCircle, AlertTriangle, Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Camera, MapPin, Upload, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const ISSUE_TYPES = [
   { value: 'pothole', label: 'Pothole', icon: '🕳️' },
@@ -41,47 +40,13 @@ const IssueReportForm = () => {
   const [issueType, setIssueType] = useState('pothole');
   const [urgency, setUrgency] = useState('medium');
   const [uploading, setUploading] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'verified' | 'failed'>('idle');
-  const [mlResult, setMlResult] = useState<MLVerificationResult | null>(null);
-  const [verificationError, setVerificationError] = useState<string | null>(null);
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
-      
-      // Automatically verify the image with ML
-      await runMLVerification(file);
-    }
-  };
-
-  const runMLVerification = async (file: File) => {
-    setVerificationStatus('verifying');
-    setVerificationError(null);
-    setMlResult(null);
-
-    try {
-      const result = await verifyPotholeImage(file);
-      setMlResult(result);
-      setVerificationStatus('verified');
-      
-      toast({
-        title: result.isPothole ? 'Issue Detected ✓' : 'Verification Complete',
-        description: result.isPothole 
-          ? `Detected with ${Math.round(result.confidence * 100)}% confidence`
-          : 'Image verified, but issue type unclear. You can still submit.',
-        variant: result.isPothole ? 'default' : 'default'
-      });
-    } catch (error: any) {
-      setVerificationStatus('failed');
-      setVerificationError(error.message);
-      toast({
-        title: 'Verification Failed',
-        description: 'ML verification failed, but you can still submit manually.',
-        variant: 'default'
-      });
     }
   };
 
@@ -120,7 +85,7 @@ const IssueReportForm = () => {
         .from('pothole-photos')
         .getPublicUrl(fileName);
 
-      // Save report to database with ML analysis
+      // Save report to database
       const { error: dbError } = await supabase
         .from('pothole_reports')
         .insert({
@@ -133,15 +98,7 @@ const IssueReportForm = () => {
           description,
           issue_type: issueType,
           urgency,
-          status: 'pending',
-          ml_analysis: mlResult ? {
-            model: mlResult.model,
-            confidence: mlResult.confidence,
-            classification: mlResult.classification,
-            is_pothole: mlResult.isPothole,
-            alternatives: mlResult.alternatives,
-            verified_at: mlResult.verifiedAt
-          } : null
+          status: 'pending'
         });
 
       if (dbError) throw dbError;
@@ -157,9 +114,6 @@ const IssueReportForm = () => {
       setDescription('');
       setIssueType('pothole');
       setUrgency('medium');
-      setVerificationStatus('idle');
-      setMlResult(null);
-      setVerificationError(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -239,67 +193,12 @@ const IssueReportForm = () => {
           />
           
           {previewUrl ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <img
                 src={previewUrl}
                 alt="Issue preview"
                 className="w-full h-48 object-cover rounded-md border"
               />
-              
-              {/* ML Verification Status */}
-              {verificationStatus === 'verifying' && (
-                <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md">
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Verifying image...</p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300">AI is analyzing the image</p>
-                  </div>
-                </div>
-              )}
-              
-              {verificationStatus === 'verified' && mlResult && (
-                <div className={`p-3 rounded-md border ${
-                  mlResult.isPothole 
-                    ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
-                    : 'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800'
-                }`}>
-                  <div className="flex items-start gap-2">
-                    {mlResult.isPothole ? (
-                      <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
-                    ) : (
-                      <ShieldAlert className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-                    )}
-                    <div className="flex-1">
-                      <p className={`text-sm font-medium ${
-                        mlResult.isPothole ? 'text-green-900 dark:text-green-100' : 'text-yellow-900 dark:text-yellow-100'
-                      }`}>
-                        {mlResult.isPothole ? 'Issue Detected ✓' : 'Verification Complete'}
-                      </p>
-                      <p className={`text-xs ${
-                        mlResult.isPothole ? 'text-green-700 dark:text-green-300' : 'text-yellow-700 dark:text-yellow-300'
-                      }`}>
-                        Confidence: {Math.round(mlResult.confidence * 100)}%
-                      </p>
-                      <p className={`text-xs mt-1 ${
-                        mlResult.isPothole ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'
-                      }`}>
-                        Classification: {mlResult.classification}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {verificationStatus === 'failed' && (
-                <div className="flex items-start gap-2 p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-md">
-                  <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-orange-900 dark:text-orange-100">Verification Failed</p>
-                    <p className="text-xs text-orange-700 dark:text-orange-300">You can still submit manually</p>
-                  </div>
-                </div>
-              )}
-              
               <Button
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
