@@ -7,6 +7,7 @@ import PhotoCapture from '@/components/PhotoCapture';
 import ReportsList from '@/components/ReportsList';
 import IssueReportForm from '@/components/IssueReportForm';
 import CreditsDisplay from '@/components/CreditsDisplay';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { LogOut, Camera, List, Shield, AlertTriangle, Trophy } from 'lucide-react';
 import {
   NavigationMenu,
@@ -81,6 +82,7 @@ const Index = () => {
                   Admin
                 </Button>
               )}
+              <ThemeToggle />
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
