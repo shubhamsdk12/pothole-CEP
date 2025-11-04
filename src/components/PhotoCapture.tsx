@@ -66,6 +66,33 @@ const PhotoCapture = () => {
         .from('pothole-photos')
         .getPublicUrl(fileName);
 
+      // Run detection on the uploaded image
+      const detectRes = await fetch('http://localhost:8000/detect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_url: publicUrl })
+      });
+
+      if (!detectRes.ok) {
+        // Best-effort cleanup of the uploaded file
+        await supabase.storage.from('pothole-photos').remove([fileName]);
+        const errText = await detectRes.text();
+        throw new Error(`Detection service error: ${errText}`);
+      }
+
+      const detectJson = await detectRes.json();
+      if (!detectJson.detected) {
+        // Not a pothole; cleanup and abort
+        await supabase.storage.from('pothole-photos').remove([fileName]);
+        toast({
+          title: 'No pothole detected',
+          description: 'Please upload a clear pothole image.',
+          variant: 'destructive'
+        });
+        setUploading(false);
+        return;
+      }
+
       // Save report to database
       const { error: dbError } = await supabase
         .from('pothole_reports')
